@@ -2,7 +2,8 @@
 """卡片笔记导出工具 - 支持 Markdown、CSV、JSON 格式导出和标签索引生成。
 
 解析策略：基于标准 Markdown 标题层级结构，不依赖特定 emoji 符号。
-当前卡片结构：标题 + 标签 + 一句话总结 + 核心洞见 + 来源。
+当前卡片结构：标题 + 标签 + 一句话总结 + 核心洞见 + 关键图示（可选） + 来源。
+图片处理：保留原始引用语法（`![](path)` / `![[file.png]]` / `<img>`），CSV/JSON 中以 images 字段单独记录，不展开 base64。
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ SECTION_ALIASES = {
     "tags": ["标签", "tags"],
     "summary": ["一句话总结", "总结", "summary"],
     "insight": ["核心洞见", "洞见", "insight"],
+    "images": ["关键图示", "图示", "images"],
     "source": ["来源", "source"],
 }
 
@@ -41,6 +43,7 @@ def parse_card_markdown(md_text: str) -> list[dict]:
             "tags": [],
             "summary": "",
             "insight": "",
+            "images": [],
             "source_type": "",
             "source_name": "",
             "source_date": "",
@@ -54,8 +57,14 @@ def parse_card_markdown(md_text: str) -> list[dict]:
                 card["summary"] = content.strip()
             elif key == "insight":
                 card["insight"] = content.strip()
+            elif key == "images":
+                card["images"] = _extract_images(content)
             elif key == "source":
                 _parse_source(card, content)
+
+        # 兜底：若卡片未单独写「关键图示」区段，但正文中出现图片引用，也收集进来
+        if not card["images"]:
+            card["images"] = _extract_images(block)
 
         if card["title"] or card["summary"] or card["insight"]:
             cards.append(card)
@@ -143,6 +152,35 @@ def _extract_tags(content: str) -> list[str]:
     return [tag.strip() for tag in tags if tag.strip()]
 
 
+def _extract_images(content: str) -> list[dict]:
+    """从文本中提取图片引用，返回列表 [{type, src, alt}]。
+
+    支持三种语法：
+    - `![alt](src)`          → type="markdown"
+    - `![[file|caption]]`    → type="wiki"
+    - `<img src="..." />`    → type="html"
+    """
+    images: list[dict] = []
+
+    for m in re.finditer(r"!\[([^\]]*)\]\(([^)]+)\)", content):
+        images.append({"type": "markdown", "alt": m.group(1).strip(), "src": m.group(2).strip()})
+
+    for m in re.finditer(r"!\[\[([^\]]+)\]\]", content):
+        raw = m.group(1).strip()
+        if "|" in raw:
+            src, alt = raw.split("|", 1)
+        else:
+            src, alt = raw, ""
+        images.append({"type": "wiki", "alt": alt.strip(), "src": src.strip()})
+
+    for m in re.finditer(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", content, re.IGNORECASE):
+        full = m.group(0)
+        alt_match = re.search(r"alt=[\"']([^\"']*)[\"']", full, re.IGNORECASE)
+        images.append({"type": "html", "alt": alt_match.group(1) if alt_match else "", "src": m.group(1).strip()})
+
+    return images
+
+
 def _parse_source(card: dict, content: str):
     """解析来源字段。"""
     type_match = re.search(r"\*\*(?:类型|Type)\*\*[：:]\s*(.+)", content)
@@ -161,7 +199,7 @@ def export_to_csv(cards: list[dict], output_path: str):
     """导出为 CSV 文件。"""
     with open(output_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=[
-            "title", "tags", "summary", "insight", "source_type", "source_name", "source_date"
+            "title", "tags", "summary", "insight", "images", "source_type", "source_name", "source_date"
         ])
         writer.writeheader()
         for card in cards:
@@ -170,11 +208,36 @@ def export_to_csv(cards: list[dict], output_path: str):
                 "tags": " | ".join(card["tags"]),
                 "summary": card["summary"],
                 "insight": card["insight"],
+                "images": " | ".join(_format_image_for_text(img) for img in card.get("images", [])),
                 "source_type": card["source_type"],
                 "source_name": card["source_name"],
                 "source_date": card["source_date"],
             })
     print(f"CSV exported: {output_path}")
+
+
+def _format_image_for_text(img: dict) -> str:
+    """把图片记录格式化为单行字符串，用于 CSV 等纯文本输出。"""
+    if not img:
+        return ""
+    label = img.get("alt", "") or img.get("src", "")
+    src = img.get("src", "")
+    return f"{label}({src})" if label and label != src else src
+
+
+def _format_image_for_md(img: dict) -> str:
+    """把图片记录还原成 Markdown 引用语法，保持原始呈现方式。"""
+    src = img.get("src", "")
+    alt = img.get("alt", "")
+    img_type = img.get("type", "markdown")
+    if img_type == "wiki":
+        return f"![[{src}|{alt}]]" if alt else f"![[{src}]]"
+    if img_type == "html":
+        attrs = f'src="{src}"'
+        if alt:
+            attrs += f' alt="{alt}"'
+        return f"<img {attrs} />"
+    return f"![{alt}]({src})"
 
 
 def export_to_json(cards: list[dict], output_path: str):
@@ -211,7 +274,7 @@ def export_to_markdown(cards: list[dict], output_path: str):
     for i, card in enumerate(cards, 1):
         tags_str = " ".join(f"`#{t}`" for t in card["tags"])
         title = card["title"] or f"卡片 {i}"
-        lines.extend([
+        section_lines = [
             f"## 卡片 {i}",
             "",
             "---",
@@ -236,6 +299,18 @@ def export_to_markdown(cards: list[dict], output_path: str):
             "",
             card["insight"],
             "",
+        ]
+
+        images = card.get("images") or []
+        if images:
+            section_lines.extend(["---", "", "### 🖼️ 关键图示", ""])
+            for img in images:
+                section_lines.append(_format_image_for_md(img))
+                if img.get("alt"):
+                    section_lines.append(f"*{img['alt']}*")
+                section_lines.append("")
+
+        section_lines.extend([
             "---",
             "",
             "### 📎 来源",
@@ -245,6 +320,7 @@ def export_to_markdown(cards: list[dict], output_path: str):
             f"- **日期**：{card['source_date']}",
             "",
         ])
+        lines.extend(section_lines)
 
     lines.append(generate_tag_index(cards))
 
