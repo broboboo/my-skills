@@ -34,10 +34,11 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内
 | `<hr>` | 分割线 | `<hr>` |
 | `<br>` | 换行 | `<br>` |
 | `<a href="url">` | 链接 | `<a href="https://...">文本</a>` |
+| `<mark>` | 高亮（黄色背景） | `<mark>高亮文本</mark>` |
+| `<span style="background-color: #xxx">` | 自定义颜色高亮 | `<span style="background-color: #ffd700; padding: 2px 4px">高亮</span>` |
 
 #### 不支持
 
-- `<mark>` 高亮
 - `==` 语法
 - 原生 Markdown
 - `<code>` / `<pre>` 代码块（可能不渲染等宽字体）
@@ -58,6 +59,7 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内
 | `1. 有序` | `<ol><li>有序</li></ol>` |
 | 表格 `\| a \| b \|` | `<table><tr><th>a</th><th>b</th></tr>...</table>` |
 | `---` 分割线 | `<hr>` |
+| `==高亮==` | `<mark>高亮</mark>` |
 | `` `代码` `` | `<b>代码</b>`（用粗体替代） |
 | 代码块 ``` | 用 `<ul><li>` 逐行列出，或用 `<p>` 包裹 |
 | 树形结构 | 用嵌套 `<ul><li>` 表示层级关系 |
