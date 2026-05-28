@@ -212,7 +212,7 @@ Obsidian wiki link 在以下路径未能解析到真实文件时（按优先级�
 <p>#书名/章节名 #内容标签1 #内容标签2 #内容标签3</p>
 <hr>
 <h3>💬 一句话总结</h3>
-<blockquote><mark>一句话总结内容</mark></blockquote>
+<p><strong>一句话总结内容</strong></p>
 <hr>
 <h3>💡 核心洞见</h3>
 <table>
