@@ -94,18 +94,7 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/get_fleeting.sh <id>
 
 ## 卡片笔记格式规范
 
-写入 Reminds 时，应遵循以下格式：
-
-1. **标题**: 不超过10字，带 emoji
-2. **结构**: 金字塔总分结构（去掉顶层核心论点，直接分点）
-3. **标签**: 分两类
-   - 出处标签(1-2个): `#书名` 或 `#来源`
-   - 内容标签(2-5个): `#关键词`
-4. **格式化**:
-   - 用 `<b>` 粗体突出核心概念
-   - 用 `<blockquote>` 引用定义或原文
-   - 用 `<hr>` 分割不同层级内容
-   - 用列表组织分点
+> **注意：卡片笔记的格式规范已统一由 `card-note-organizer` skill 管理（`references/card-spec.md`），本 skill 不再维护独立的格式规范。写入 Reminds 时的 HTML 结构和渲染规则请参考 `card-note-organizer` 中的「Reminds 写入格式」章节。**
 
 ## 示例
 
