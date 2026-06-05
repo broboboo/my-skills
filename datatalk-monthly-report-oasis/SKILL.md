@@ -115,9 +115,11 @@ agent_created: true
 
 **金额单位：万元**（原始值/10000，保留整数或1位小数）
 
-### Step 4: 生成报告并推送
+### Step 4: 生成报告（暂不推送）
 
-**每个看板生成一条独立消息**，分别推送到企微群。
+**两条报告都生成完毕后，再进入 Step 5 统一推送。**
+
+每个看板生成一条独立消息，存入变量（如 `report_319689`、`report_307333`），**不立即推送**。
 
 #### 报告格式（看板 319689 — 离线号码包监控）
 
@@ -142,6 +144,7 @@ agent_created: true
 - **不要用 `---` 分割线**（企微不渲染）、**不要用表格**（企微 Markdown 不支持）
 - 观察部分：**结论加粗放最前**，后面跟具体数据/分析（结论先行）
 - 游戏分布格式：`游戏名(数量, 占比%)`，多个用 `、` 分隔
+- **概况部分只包含「离线包总数」和「游戏分布」两项，禁止添加「上传时间分布」或其他额外字段**
 
 #### 报告格式（看板 307333 — 人工配额监控）
 
@@ -172,35 +175,41 @@ agent_created: true
 - 游戏分布格式：`游戏名(金额万元, 占比%)`
 - 备注判断：结论直接写（如 `备注"测试"→测试用途`），不要把备注原文丢给用户判断
 
-**推送命令示例（看板 319689）：**
+### Step 5: 推送企微（两条连续发送）
+
+**两条报告都准备好后，用同一个 Python 脚本连续发送两条消息**，避免时间差导致顺序混乱。
+
+推送脚本模板（同时发送两条）：
 
 ```python
 import json, urllib.request
 
-content = "🗓️ 离线号码包监控 - 2026年5月\n💡 概况\n> • **离线包总数**：4个（上月20个，环比-80%）\n> • **游戏分布**：元梦之星(3, 75%)、合金弹头：觉醒(1, 25%)\n\n🔎 观察\n> • **5月上传4个包均为测试/补发用途，无生产业务人群包**。crowd_name 含「测试」「补发」等字样，判断为非生产用途。\n> • **3个包集中在05-27上传，存在月末集中操作**。建议日常分散上传，避免月末扎堆。\n\n🔗 [查看看板](https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/319689?menuIds=menu_t5lqd02c)"
+# 报告内容（已从 Step 4 生成）
+report_319689 = "🗓️ 离线号码包监控 - 2026年5月\n💡 概况\n> • **离线包总数**：4个（上月20个，环比-80%）\n> • **游戏分布**：元梦之星(3, 75%)、合金弹头：觉醒(1, 25%)\n\n🔎 观察\n> • **5月上传4个包均为测试/补发用途，无生产业务人群包**。crowd_name 含「测试」「补发」等字样，判断为非生产用途。\n> • **3个包集中在05-27上传，存在月末集中操作**。建议日常分散上传，避免月末扎堆。\n\n🔗 [查看看板](https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/319689?menuIds=menu_t5lqd02c)"
 
-payload = {"msgtype": "markdown", "markdown": {"content": content}}
-data = json.dumps(payload, ensure_ascii=False).encode()
-req = urllib.request.Request(config["wecom_webhook_url"], data=data, headers={"Content-Type": "application/json; charset=utf-8"})
-resp = urllib.request.urlopen(req)
-print(resp.read().decode())
+report_307333 = "🗓️ 人工配额监控 - 2026年5月\n💡 概况\n> **「虚拟金」**\n> **配额总量**：0万元（上月2万元，环比-100%）\n> **游戏分布**：无\n> \n> **「现金」**\n> **配额总量**：0万元\n> **游戏分布**：无\n\n🔎 观察\n> • **虚拟金：5月无配额数据，上月（4月）也无虚拟金配额记录**。\n> • **现金：5月无配额数据**，上月（4月）也无现金配额记录。\n\n🔗 [查看看板](https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/307333)"
+
+webhook_url = config["wecom_webhook_url"]
+
+# 第一条：319689 离线号码包监控
+payload1 = json.dumps({"msgtype": "markdown", "markdown": {"content": report_319689}}, ensure_ascii=False).encode()
+req1 = urllib.request.Request(webhook_url, data=payload1, headers={"Content-Type": "application/json; charset=utf-8"})
+resp1 = urllib.request.urlopen(req1)
+print("319689:", resp1.read().decode())
+
+# 第二条：307333 人工配额监控（紧接第一条，无间隔）
+payload2 = json.dumps({"msgtype": "markdown", "markdown": {"content": report_307333}}, ensure_ascii=False).encode()
+req2 = urllib.request.Request(webhook_url, data=payload2, headers={"Content-Type": "application/json; charset=utf-8"})
+resp2 = urllib.request.urlopen(req2)
+print("307333:", resp2.read().decode())
 ```
 
-**推送命令示例（看板 307333）：**
+**关键点：**
+- 两条消息在**同一个脚本、同一次执行**中连续发送
+- 先发 319689，再发 307333，中间无额外操作
+- 如任意一条推送失败，记录错误后继续发第二条，不中断流程
 
-```python
-import json, urllib.request
-
-content = "🗓️ 人工配额监控 - 2026年4月\n💡 概况\n> **「虚拟金」**\n> **配额总量**：2万元（上月2万元，环比0%）\n> **游戏分布**：QQ手游测试号No1：乘风破浪(2万元, 100%)\n> \n> **「现金」**\n> **配额总量**：0万元\n> **游戏分布**：无\n\n🔎 观察\n> • **虚拟金：4月配额2万元，与3月持平**。备注\"测试\"→测试用途，非生产业务。\n> • **现金：4月无配额数据**，上月（3月）也无现金配额记录。\n\n🔗 [查看看板](https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/307333)"
-
-payload = {"msgtype": "markdown", "markdown": {"content": content}}
-data = json.dumps(payload, ensure_ascii=False).encode()
-req = urllib.request.Request(config["wecom_webhook_url"], data=data, headers={"Content-Type": "application/json; charset=utf-8"})
-resp = urllib.request.urlopen(req)
-print(resp.read().decode())
-```
-
-### Step 5: 存档
+### Step 6: 存档
 
 将生成的总结保存到本地存档：
 ```
