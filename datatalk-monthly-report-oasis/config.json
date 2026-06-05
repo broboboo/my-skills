@@ -1,0 +1,51 @@
+{
+  "wecom_webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=e7f99187-fdc6-46c8-b9a5-fc9420004964",
+  "dashboards": [
+    {
+      "id": 319689,
+      "name": "绿洲_离线号码包监控",
+      "project": "ic_pcg_social",
+      "url": "https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/319689?menuIds=menu_t5lqd02c",
+      "key_cards": [
+        {"cardId": "indexCardUltra_3zwza917", "name": "当月离线号码包上传数量", "type": "index"},
+        {"cardId": "line_l3r8ta1m", "name": "每日离线号码包上传量", "type": "line"},
+        {"cardId": "barHorizontal_9icpvq08", "name": "离线号码包在游戏上的分布", "type": "bar"},
+        {"cardId": "table_k4eaxvn0", "name": "明细表格", "type": "table"}
+      ]
+    },
+    {
+      "id": 307333,
+      "name": "绿洲_虚拟金配额",
+      "project": "ic_pcg_social",
+      "url": "https://beacon.woa.com/datatalk/ic_pcg_social/dashboard/307333",
+      "menus": [
+        {
+          "name": "人工",
+          "key_cards": [
+            {"cardId": "indexCardUltra_3zm562t4", "name": "本月人工配额总量级", "type": "index"},
+            {"cardId": "table_rtwwu7h7", "name": "明细表格", "type": "table"},
+            {"cardId": "barHorizontal_dg2wwkdn", "name": "人工配额量级Top游戏", "type": "bar"}
+          ]
+        },
+        {
+          "name": "虚拟金",
+          "key_cards": [
+            {"cardId": "indexCardUltra_s2spdb1z", "name": "本月游戏账户入账", "type": "index"},
+            {"cardId": "line_jzsvta8i", "name": "月度配额趋势", "type": "line"},
+            {"cardId": "pieDoughnut_t824a1kz", "name": "本月虚拟金入账来源", "type": "pie"}
+          ]
+        },
+        {
+          "name": "现金",
+          "key_cards": [
+            {"cardId": "indexCardUltra_n62fnhn4", "name": "本月现金入账", "type": "index"},
+            {"cardId": "line_e62zbyb8", "name": "月度配额趋势", "type": "line"}
+          ]
+        }
+      ]
+    }
+  ],
+  "output_dir": "~/Library/Mobile Documents/com~apple~CloudDocs/[Bobooo]/output/beacon-monitor",
+  "summary_template": "monthly",
+  "time_range": "last_month"
+}
