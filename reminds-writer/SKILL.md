@@ -1,3 +1,8 @@
+---
+name: reminds-writer
+description: Reminds 笔记写入工具 - 通过 HTTP API 直接写入 fleeting note 到 Reminds，无需 MCP 连接器。
+---
+
 # reminds-writer
 
 Reminds 笔记写入工具 - 通过 HTTP API 直接写入 fleeting note 到 Reminds，无需 MCP 连接器。
