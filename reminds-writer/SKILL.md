@@ -16,14 +16,57 @@ Reminds 笔记写入工具 - 通过 HTTP API 直接写入 fleeting note 到 Remi
 ### 1. 创建 fleeting note
 
 ```bash
+# 方式1：通过 stdin（推荐，尤其含 base64 图片时避免参数长度限制）
+echo "<HTML内容>" | bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh
+
+# 方式2：通过命令行参数
 bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内容>"
+
+# 方式3：从文件读取
+bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh < /tmp/note.html
 ```
 
 内容必须是 **HTML 格式**（Reminds API 要求）。
 
-### HTML 格式规范（已验证可正常渲染）
+### 2. 更新 fleeting note
 
-#### 支持的标签
+```bash
+# 通过 stdin（推荐）
+echo "<HTML内容>" | bash /root/.codebuddy/skills/reminds-writer/scripts/update_fleeting.sh <id>
+
+# 通过命令行参数
+bash /root/.codebuddy/skills/reminds-writer/scripts/update_fleeting.sh <id> "<HTML内容>"
+```
+
+> **注意：** Reminds API 可能不完全支持 `update_fleeting` 方法。如果更新失败，回退方案为先删除旧笔记再重新创建。
+
+### 3. 搜索笔记
+
+```bash
+bash /root/.codebuddy/skills/reminds-writer/scripts/search_notes.sh "<查询内容>" [limit] [mode]
+```
+
+- mode: "qa"（精确问答）或 "retrieval"（广泛检索，默认）
+
+**与 MCP 搜索工具的关系：** `search_notes.sh` 和 `mcp__reminds-mcp__search_notes` 走同一 Reminds 后端，结果等价。优先使用 MCP 工具（`card-note-organizer` 的 Step 4 关联笔记搜索优先调用 MCP），MCP 不可用时回退到本脚本。
+
+### 4. 获取笔记内容
+
+```bash
+bash /root/.codebuddy/skills/reminds-writer/scripts/get_notes.sh <gid1> [gid2] [gid3...]
+```
+
+### 5. 获取 fleeting note
+
+```bash
+bash /root/.codebuddy/skills/reminds-writer/scripts/get_fleeting.sh <id>
+```
+
+## HTML 格式规范（已验证可正常渲染）
+
+> **权威声明：** 本 skill 的 HTML 标签支持和 Markdown → HTML 转换映射表是 `card-note-organizer` 引用该映射表的唯一权威来源。`card-note-organizer` 的 `card-spec.md` 引用本表，不独立维护。两者如有差异，以本文件为准。
+
+### 支持的标签
 
 | 标签 | 用途 | 示例 |
 |------|------|------|
@@ -42,13 +85,13 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内
 | `<mark>` | 高亮（黄色背景） | `<mark>高亮文本</mark>` |
 | `<span style="background-color: #xxx">` | 自定义颜色高亮 | `<span style="background-color: #ffd700; padding: 2px 4px">高亮</span>` |
 
-#### 不支持
+### 不支持
 
 - `==` 语法
 - 原生 Markdown
 - `<code>` / `<pre>` 代码块（可能不渲染等宽字体）
 
-### 写入格式转换规则
+## 写入格式转换规则
 
 当用户提供 Markdown 内容或要求"原封不动写入"时，按以下规则转换为 HTML：
 
@@ -62,14 +105,14 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内
 | `> 引用` | `<blockquote>引用</blockquote>` |
 | `- 列表项` | `<ul><li>列表项</li></ul>` |
 | `1. 有序` | `<ol><li>有序</li></ol>` |
-| 表格 `\| a \| b \|` | `<table><tr><th>a</th><th>b</th></tr>...</table>` |
+| 表格 `| a | b |` | `<table><tr><th>a</th><th>b</th></tr>...</table>` |
 | `---` 分割线 | `<hr>` |
 | `==高亮==` | `<mark>高亮</mark>` |
 | `` `代码` `` | `<b>代码</b>`（用粗体替代） |
 | 代码块 ``` | 用 `<ul><li>` 逐行列出，或用 `<p>` 包裹 |
 | 树形结构 | 用嵌套 `<ul><li>` 表示层级关系 |
 
-### 格式最佳实践
+## 格式最佳实践
 
 1. **段落之间**用 `<p>` 包裹，不要裸文本
 2. **HTML 元素之间必须有换行**：标题与段落间用双换行（`\n\n`），同类元素间用单换行（`\n`），`<hr>` 前后各一个换行。**禁止全部元素挤在一行**，Reminds 渲染器会粘连
@@ -77,26 +120,7 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh "<HTML内
 4. **嵌套列表**用 `<ul>` 嵌套在 `<li>` 内部表达层级
 5. **分割线 `<hr>`** 用于分隔不同章节/层级内容
 6. **不要自闭合** `<br/>` 写成 `<br>` 即可
-
-### 2. 搜索笔记
-
-```bash
-bash /root/.codebuddy/skills/reminds-writer/scripts/search_notes.sh "<查询内容>" [limit] [mode]
-```
-
-- mode: "qa"（精确问答）或 "retrieval"（广泛检索，默认）
-
-### 3. 获取笔记内容
-
-```bash
-bash /root/.codebuddy/skills/reminds-writer/scripts/get_notes.sh <gid1> [gid2] [gid3...]
-```
-
-### 4. 获取 fleeting note
-
-```bash
-bash /root/.codebuddy/skills/reminds-writer/scripts/get_fleeting.sh <id>
-```
+7. **优先通过 stdin 传入内容**：当 HTML 含 base64 图片时，命令行参数可能超长；使用 stdin 或临时文件避免此问题
 
 ## 卡片笔记格式规范
 
@@ -167,3 +191,7 @@ bash /root/.codebuddy/skills/reminds-writer/scripts/create_fleeting.sh '<h2>🧠
 
 <p><b>一句话总结</b>：好的设计就是让目标<b>不用找就能看到</b>。</p>
 ```
+
+## 流程规则
+
+- **GitHub 同步**：当 skill 文件（SKILL.md / scripts）发生任何修改后，必须按 `~/.workbuddy/MEMORY.md` 中「Skill 同步到 GitHub 规则」立即同步至 `broboboo/my-skills`。**card-note-organizer 和 reminds-writer 两个 skill 均需遵守此规则。**
