@@ -2,7 +2,7 @@
 """卡片笔记导出工具 - 支持 Markdown、CSV、JSON 格式导出和标签索引生成。
 
 解析策略：基于标准 Markdown 标题层级结构，不依赖特定 emoji 符号。
-当前卡片结构：标题 + 标签 + 一句话总结 + 核心洞见 + 关键图示（可选） + 来源。
+当前卡片结构：标题 + 标签 + 一句话总结 + 核心要点 + 洞见 + 关键图示（可选） + 来源 + 关联笔记（可选）。
 图片处理：保留原始引用语法（`![](path)` / `![[file.png]]` / `<img>`），CSV/JSON 中以 images 字段单独记录，不展开 base64。
 """
 
@@ -18,9 +18,11 @@ from pathlib import Path
 SECTION_ALIASES = {
     "tags": ["标签", "tags"],
     "summary": ["一句话总结", "总结", "summary"],
-    "insight": ["核心洞见", "洞见", "insight"],
+    "core_points": ["核心要点", "核心内容", "core points"],
+    "insight": ["洞见", "insight"],
     "images": ["关键图示", "图示", "images"],
     "source": ["来源", "source"],
+    "related": ["关联笔记", "关联", "related"],
 }
 
 
@@ -42,8 +44,10 @@ def parse_card_markdown(md_text: str) -> list[dict]:
             "title": _extract_title(block),
             "tags": [],
             "summary": "",
+            "core_points": "",
             "insight": "",
             "images": [],
+            "related": [],
             "source_type": "",
             "source_name": "",
             "source_date": "",
@@ -55,10 +59,14 @@ def parse_card_markdown(md_text: str) -> list[dict]:
                 card["tags"] = _extract_tags(content)
             elif key == "summary":
                 card["summary"] = content.strip()
+            elif key == "core_points":
+                card["core_points"] = content.strip()
             elif key == "insight":
                 card["insight"] = content.strip()
             elif key == "images":
                 card["images"] = _extract_images(content)
+            elif key == "related":
+                card["related"] = _extract_related(content)
             elif key == "source":
                 _parse_source(card, content)
 
@@ -66,7 +74,7 @@ def parse_card_markdown(md_text: str) -> list[dict]:
         if not card["images"]:
             card["images"] = _extract_images(block)
 
-        if card["title"] or card["summary"] or card["insight"]:
+        if card["title"] or card["summary"] or card["core_points"] or card["insight"]:
             cards.append(card)
 
     return cards
@@ -181,6 +189,12 @@ def _extract_images(content: str) -> list[dict]:
     return images
 
 
+def _extract_related(content: str) -> list[str]:
+    """提取关联笔记链接：`@笔记标题` 格式。"""
+    related = re.findall(r"@([^\s@，,；;]+)", content)
+    return [r.strip() for r in related if r.strip()]
+
+
 def _parse_source(card: dict, content: str):
     """解析来源字段。"""
     type_match = re.search(r"\*\*(?:类型|Type)\*\*[：:]\s*(.+)", content)
@@ -199,7 +213,8 @@ def export_to_csv(cards: list[dict], output_path: str):
     """导出为 CSV 文件。"""
     with open(output_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=[
-            "title", "tags", "summary", "insight", "images", "source_type", "source_name", "source_date"
+            "title", "tags", "summary", "core_points", "insight",
+            "images", "related", "source_type", "source_name", "source_date"
         ])
         writer.writeheader()
         for card in cards:
@@ -207,8 +222,10 @@ def export_to_csv(cards: list[dict], output_path: str):
                 "title": card["title"],
                 "tags": " | ".join(card["tags"]),
                 "summary": card["summary"],
+                "core_points": card["core_points"],
                 "insight": card["insight"],
                 "images": " | ".join(_format_image_for_text(img) for img in card.get("images", [])),
+                "related": " | ".join(card.get("related", [])),
                 "source_type": card["source_type"],
                 "source_name": card["source_name"],
                 "source_date": card["source_date"],
@@ -295,7 +312,13 @@ def export_to_markdown(cards: list[dict], output_path: str):
             "",
             "---",
             "",
-            "### 💡 核心洞见",
+            "### 📌 核心要点",
+            "",
+            card["core_points"],
+            "",
+            "---",
+            "",
+            "### 💡 洞见",
             "",
             card["insight"],
             "",
@@ -315,11 +338,23 @@ def export_to_markdown(cards: list[dict], output_path: str):
             "",
             "### 📎 来源",
             "",
-            f"- **类型**：{card['source_type']}",
             f"- **出处**：{card['source_name']}",
             f"- **日期**：{card['source_date']}",
             "",
         ])
+
+        related = card.get("related") or []
+        if related:
+            section_lines.extend([
+                "---",
+                "",
+                "### 🔗 关联笔记",
+                "",
+            ])
+            for r in related:
+                section_lines.append(f"- @{r}")
+            section_lines.append("")
+
         lines.extend(section_lines)
 
     lines.append(generate_tag_index(cards))
