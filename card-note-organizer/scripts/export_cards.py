@@ -102,7 +102,12 @@ def _split_card_blocks(md_text: str) -> list[str]:
 
 
 def _extract_title(block: str) -> str:
-    """提取卡片标题：第一个非 `## 卡片`、非索引类的二级标题。"""
+    """提取卡片标题。
+
+    优先取第一个非 `## 卡片`、非索引类的二级标题（`## 标题`）。
+    若未找到，回退到第一个出现在 `###` 区段之前的 `**加粗标题**`。
+    """
+    # 策略一：`## 标题` 格式
     for line in block.split("\n"):
         stripped = line.strip()
         if not stripped.startswith("## "):
@@ -112,6 +117,20 @@ def _extract_title(block: str) -> str:
         if title.startswith("卡片") or lower in {"tag index", "标签索引"}:
             continue
         return title
+
+    # 策略二：`**加粗标题**` 格式（仅取第一个 `###` 区段之前出现的）
+    in_sections = False
+    for line in block.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("### "):
+            in_sections = True
+            break
+        m = re.match(r"\*\*(.+?)\*\*$", stripped)
+        if m:
+            title = m.group(1).strip()
+            if title and not title.startswith("卡片"):
+                return title
+
     return ""
 
 
