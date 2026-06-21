@@ -2,6 +2,11 @@
 name: card-note-organizer
 description: "卡片笔记整理工具。将零散的原始笔记、摘录、想法或网页内容转化为结构化的卡片笔记（标题 → 标签 → 一句话总结 → 核心要点 → 洞见 → 关键图示 → 来源 → 关联笔记）。支持单条和批量整理；输入中带有图片时，必须保留并嵌入卡片；支持导出为 Markdown/CSV/JSON，支持写入 Reminds 或 Obsidian vault。"
 agent_created: true
+version: 1.0.0
+category: productivity
+platforms:
+  - workbuddy
+  - claw
 ---
 
 # Card Note Organizer
@@ -140,5 +145,4 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 
 ## Process Rules
 
-- **GitHub 同步**：当 skill 文件（SKILL.md / references / scripts / assets）发生任何修改后，必须按 `~/.workbuddy/MEMORY.md` 中「Skill 同步到 GitHub 规则」立即同步至 `broboboo/my-skills`。**card-note-organizer 和 reminds-writer 两个 skill 均需遵守此规则。**
 - Markdown → HTML 转换映射表以 `reminds-writer` 的 SKILL.md 为权威来源；`card-note-organizer` 的 `card-spec.md` 中引用该映射表，不独立维护。

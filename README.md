@@ -6,17 +6,24 @@
 
 ```
 my-skills/
-├── README.md                     # 本文件
-├── LICENSE                       # MIT
+├── README.md                          # 本文件
+├── LICENSE                            # MIT
 ├── .gitignore
-└── card-note-organizer/          # 卡片笔记整理 skill
-    ├── SKILL.md
-    ├── references/
-    │   └── card-spec.md
-    ├── scripts/
-    │   └── export_cards.py
-    └── assets/
-        └── card-template.md
+├── card-note-organizer/               # 卡片笔记整理 skill
+│   ├── SKILL.md
+│   ├── references/
+│   │   └── card-spec.md
+│   ├── scripts/
+│   │   └── export_cards.py
+│   └── assets/
+│       └── card-template.md
+├── reminds-writer/                    # Reminds 笔记写入 skill
+│   ├── SKILL.md
+│   └── scripts/
+│       ├── create_fleeting.sh
+│       └── search_notes.sh
+└── datatalk-monthly-report-oasis/     # 绿洲看板月度报告 skill
+    └── SKILL.md
 ```
 
 ## 安装方式
@@ -45,13 +52,24 @@ cp -r /tmp/my-skills/card-note-organizer ~/.workbuddy/skills/
 
 ### card-note-organizer
 
-卡片笔记整理工具。把零散的原始笔记、摘录、想法或网页内容转化为结构化卡片笔记（标题 → 标签 → 一句话总结 → 核心洞见 → 来源），核心洞见使用金字塔总分结构。
+卡片笔记整理工具。把零散的原始笔记、摘录、想法或网页内容转化为结构化卡片笔记。
+
+每张卡片包含：标题（≤10字）→ 标签（出处/内容/概念三类混排）→ 一句话总结 → 核心要点（主动重组原文结构）→ 洞见（原文未直接说出的上位判断）→ 关键图示 → 来源 → 关联笔记。
 
 - 支持单条与批量整理
+- 输入中带有图片时，保留并嵌入卡片
 - 支持导出为 Markdown / CSV / JSON
 - 支持写入 Reminds（HTML 格式）或 Obsidian vault
 
 详见 [`card-note-organizer/SKILL.md`](./card-note-organizer/SKILL.md)。
+
+### reminds-writer
+
+Reminds 笔记写入工具。通过 HTTP API 写入 fleeting note，提供 Markdown → HTML 转换映射表供其他 skill 引用。
+
+### datatalk-monthly-report-oasis
+
+绿洲业务灯塔 DataTalk 看板月度报告生成与推送。从 DataTalk 拉取看板数据，生成结构化监控月报并推送企业微信。
 
 ## License
 
