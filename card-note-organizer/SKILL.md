@@ -69,7 +69,7 @@ platforms:
 
 **关联笔记延迟执行流程：**
 
-- 用户选择 **Reminds** 输出时：在写入前调用 `mcp__reminds-mcp__search_notes`（优先）或回退到 `reminds-writer` 的 `search_notes.sh` 脚本，基于当前卡片标签和主题关键词搜索已有笔记，筛选强相关条目填入关联笔记区。一次整理多张卡片时，新卡片之间也互相链接。格式：`@笔记标题`，每条一行。
+- 用户选择 **Reminds** 输出时：在写入前调用 `mcp__reminds-mcp__search_notes`（优先）或回退到 `scripts/search_notes.sh` 脚本，基于当前卡片标签和主题关键词搜索已有笔记，筛选强相关条目填入关联笔记区。一次整理多张卡片时，新卡片之间也互相链接。格式：`@笔记标题`，每条一行。
 - 用户选择 **文件** 或 **Obsidian** 输出时：跳过 Reminds 搜索。关联笔记区不写入，或提示用户「关联笔记需手动补充」。
 
 **端到端回滚：** 写入 Reminds 时，先完成 Markdown → HTML 转换并确认卡片内容，再调用 API 写入。如果 API 写入失败，保留已生成的 Markdown 卡片文件在 `/workspace` 下，告知用户「Reminds 写入失败，Markdown 卡片已保存至 {文件路径}，可稍后重试」，避免信息丢失。
@@ -121,8 +121,10 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 
 ## Resources
 
-- `references/card-spec.md` — 卡片结构模板、各字段详细规范、质量自检清单
+- `references/card-spec.md` — 卡片结构模板、各字段详细规范、质量自检清单（含 Reminds HTML 渲染支持参考）
 - `scripts/export_cards.py` — 多格式导出脚本（MD/CSV/JSON/标签索引）
+- `scripts/create_fleeting.sh` — Reminds fleeting note 写入脚本（需配置 `REMINDS_API_KEY`）
+- `scripts/search_notes.sh` — Reminds 笔记搜索脚本（需配置 `REMINDS_API_KEY`）
 - `assets/card-template.md` — 可复制的空白卡片模板
 
 ## Technical Constraints
@@ -131,7 +133,7 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 - Reminds 只接收 HTML 内容；写入前先用 Markdown 层级设计结构，再转换为 HTML，并保留分割线、emoji 标题和出处标签。
 - **图片必须嵌入而非省略**：本地图片转为 `data:image/<ext>;base64,...` 内联，远程图片用原 URL；Obsidian wiki link `![[file.png]]` 在写入 Reminds 时必须先解析到真实文件再 base64 化。
 - Obsidian wiki link 解析路径优先级：① 同目录 `attachments/`、`assets/`；② vault 根目录搜索；③ 解析失败时在卡片中保留原 wiki link 并附文字提示「图片解析失败，见原笔记」。
-- Shell 命令行参数传递 HTML 内容时，长度可能超限（尤其含 base64 图片时）；优先通过 stdin 或临时文件方式调用 `reminds-writer` 的 `create_fleeting.sh`（该脚本已支持 stdin 输入）。
+- Shell 命令行参数传递 HTML 内容时，长度可能超限（尤其含 base64 图片时）；优先通过 stdin 或临时文件方式调用 `scripts/create_fleeting.sh`（该脚本已支持 stdin 输入）。
 
 ## Design Principles
 
@@ -143,6 +145,4 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 - 洞见区只写额外判断，不重复核心要点已有内容；如果某条笔记无值得额外提炼的洞见，洞见区可以不写。
 - 呈现方式（表格/列表/段落）由内容底层逻辑关系驱动，不机械套用固定格式。
 
-## Process Rules
 
-- Markdown → HTML 转换映射表以 `reminds-writer` 的 SKILL.md 为权威来源；`card-note-organizer` 的 `card-spec.md` 中引用该映射表，不独立维护。

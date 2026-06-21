@@ -180,7 +180,7 @@
 
    - 标点符号：灵活选用「」、""、【】、() 等辅助强调，根据语境和可读性自行判断。
    
-   写入 Reminds 时，必须参照 reminds-writer skill 中定义的 HTML 渲染规范，善用 `<b>`、`<i>`、`<blockquote>`、`<mark>`、`<table>`、`<hr>` 等标签实现视觉层级区分。
+   写入 Reminds 时，必须参照本文档下方「Reminds HTML 渲染支持参考」中的渲染规范，善用 `<b>`、`<i>`、`<blockquote>`、`<mark>`、`<table>`、`<hr>` 等标签实现视觉层级区分。
 
 3. **洞见区的额外要求**：
    - 观点必须清楚——写完后自问"这段话原文有没有直接说过？"如果有，说明还在复述，必须重新抽象。
@@ -348,8 +348,6 @@ Obsidian wiki link 在以下路径未能解析到真实文件时（按优先级�
 
 ## Reminds 写入格式
 
-> **权威来源声明：** Markdown → HTML 转换映射表和 Reminds 渲染端支持的标签清单，以 `reminds-writer` skill 的 SKILL.md 为唯一权威来源。本文件引用该映射表，不独立维护。如两处有差异，以 `reminds-writer` 为准。
-
 当输出目标是 Reminds 时，必须遵循以下规则：
 
 1. **Markdown 是唯一信息源**：HTML 必须从已确认的 Markdown 卡片忠实转换而来，不得独立撰写。转换时逐条核对——文字内容逐字对应、emoji 不遗漏、格式标记（`**加粗**`→`<b>`、`*斜体*`→`<i>`、`==高亮==`→`<mark>`）全部带到 HTML。禁止「Markdown 有但 HTML 漏掉」的任何单项。
@@ -404,7 +402,7 @@ Obsidian wiki link 在以下路径未能解析到真实文件时（按优先级�
 
 ### Reminds HTML 渲染支持参考
 
-以下是 Reminds 渲染端实际支持的 HTML 标签和转换规则（来源：reminds-writer skill 验证）：
+以下是 Reminds 渲染端实际支持的 HTML 标签和转换规则：
 
 #### 支持的标签
 
@@ -423,6 +421,7 @@ Obsidian wiki link 在以下路径未能解析到真实文件时（按优先级�
 | `<br>` | 换行 | `<br>` |
 | `<a href="url">` | 链接 | `<a href="https://...">文本</a>` |
 | `<mark>` | 高亮（黄色背景） | `<mark>高亮文本</mark>` |
+| `<span style="background-color: #xxx">` | 自定义颜色高亮 | `<span style="background-color: #ffd700; padding: 2px 4px;">高亮</span>` |
 | `<img src="...">` | 图片 | `<img src="reminds://img/..." />` |
 | `<figure>` + `<figcaption>` | 图片 + 标注 | 见上方 HTML 结构示例 |
 | `<code>` | 行内代码样式 | `<code>#标签名</code>` |
