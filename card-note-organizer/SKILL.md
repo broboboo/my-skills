@@ -117,13 +117,15 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 - **单张修改**：直接修改指定卡片，修改后重新执行 Step 5 质量检查
 - **删除卡片**：移除该卡片，更新其他卡片编号和标签索引
 - **批量修改**：如涉及多张卡片，修改完成后重新生成标签索引
-- 如果卡片已写入 Reminds，修改后需重新写入（此时为更新操作；如 Reminds 不支持更新，则删除旧笔记后重新创建）
+- 如果卡片已写入 Reminds，修改后需重新写入。优先尝试更新：用 `bash scripts/get_fleeting.sh <id>` 确认旧笔记存在，再用 `bash scripts/update_fleeting.sh <id>`（支持 stdin 传入 HTML）更新。如果 API 返回 update_fleeting 不支持的错误，回退为 `bash scripts/create_fleeting.sh` 创建新笔记，并告知用户「Reminds API 不支持更新，已新建笔记，请手动删除旧笔记（ID: xxx）」。
 
 ## Resources
 
 - `references/card-spec.md` — 卡片结构模板、各字段详细规范、质量自检清单（含 Reminds HTML 渲染支持参考）
 - `scripts/export_cards.py` — 多格式导出脚本（MD/CSV/JSON/标签索引）
-- `scripts/create_fleeting.sh` — Reminds fleeting note 写入脚本（需配置 `REMINDS_API_KEY`）
+- `scripts/create_fleeting.sh` — Reminds fleeting note 创建脚本（需配置 `REMINDS_API_KEY`）
+- `scripts/update_fleeting.sh` — Reminds fleeting note 更新脚本（需配置 `REMINDS_API_KEY`）
+- `scripts/get_fleeting.sh` — Reminds fleeting note 查询脚本（需配置 `REMINDS_API_KEY`）
 - `scripts/search_notes.sh` — Reminds 笔记搜索脚本（需配置 `REMINDS_API_KEY`）
 - `assets/card-template.md` — 可复制的空白卡片模板
 
@@ -133,7 +135,7 @@ python3 scripts/export_cards.py input.md -f csv -o output.csv
 - Reminds 只接收 HTML 内容；写入前先用 Markdown 层级设计结构，再转换为 HTML，并保留分割线、emoji 标题和出处标签。
 - **图片必须嵌入而非省略**：本地图片转为 `data:image/<ext>;base64,...` 内联，远程图片用原 URL；Obsidian wiki link `![[file.png]]` 在写入 Reminds 时必须先解析到真实文件再 base64 化。
 - Obsidian wiki link 解析路径优先级：① 同目录 `attachments/`、`assets/`；② vault 根目录搜索；③ 解析失败时在卡片中保留原 wiki link 并附文字提示「图片解析失败，见原笔记」。
-- Shell 命令行参数传递 HTML 内容时，长度可能超限（尤其含 base64 图片时）；优先通过 stdin 或临时文件方式调用 `scripts/create_fleeting.sh`（该脚本已支持 stdin 输入）。
+- Shell 命令行参数传递 HTML 内容时，长度可能超限（尤其含 base64 图片时）；优先通过 stdin 或临时文件方式调用 `scripts/create_fleeting.sh` / `scripts/update_fleeting.sh`（均已支持 stdin 输入）。
 
 ## Design Principles
 
